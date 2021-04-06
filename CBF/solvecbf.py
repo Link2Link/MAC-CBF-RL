@@ -50,12 +50,14 @@ def applyrange(input, r):
     if input > r[1]:
         output = np.array([r[1]])
         punishment = r[1] - input
+        punishment = 0 * np.ones(1, dtype=np.float32)
     elif input < r[0]:
         output = np.array([r[0]])
         punishment = input - r[0]
+        punishment = 0 * np.ones(1, dtype=np.float32)
     else:
         output = input
-        punishment = 1 * np.ones(1, dtype=np.float32)
+        punishment = np.ones(1, dtype=np.float32)
     return output, punishment[0]
 
 def solvecbf(state, u_ref, threshold=[-0.2617, 0.2617]):
