@@ -1,7 +1,8 @@
 
 import torch
 import torch.nn as nn
-from torch.distributions import MultivariateNormal
+from torch.distributions import MultivariateNormal, Normal
+import time
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -33,7 +34,8 @@ class ActorCritic(nn.Module):
     def act(self, state, memory=None):
         action_mean = self.actor(state)
         cov_mat = torch.diag(self.action_var).to(device)
-        
+
+
         dist = MultivariateNormal(action_mean, cov_mat)
         action = dist.sample()
         action_logprob = dist.log_prob(action)
@@ -50,9 +52,7 @@ class ActorCritic(nn.Module):
         
         action_var = self.action_var.expand_as(action_mean)
         cov_mat = torch.diag_embed(action_var).to(device)
-        
-        dist = MultivariateNormal(action_mean, cov_mat)
-        
+        dist = Normal(action_mean, cov_mat)
         action_logprobs = dist.log_prob(action)
         dist_entropy = dist.entropy()
         state_value = self.critic(state)

@@ -10,13 +10,13 @@ from CBF.solvecbf import solvecbf
 def main():
     ############## Hyperparameters ##############
     env_name = "CartPole-C-v0"
-    render = True
+    render = False
     solved_reward = 300         # stop training if avg_reward > solved_reward
     log_interval = 20           # print avg reward in the interval
     max_episodes = 10000        # max training episodes
     max_timesteps = 1500        # max timesteps in one episode
     
-    update_timestep = 4000      # update policy every n timesteps
+    update_timestep = 100      # update policy every n timesteps
     action_std = 0.5            # constant std for action distribution (Multivariate Normal)
     K_epochs = 80               # update policy for K epochs
     eps_clip = 0.2              # clip parameter for PPO
@@ -24,7 +24,8 @@ def main():
     
     lr = 0.0003                 # parameters for Adam optimizer
     betas = (0.9, 0.999)
-    
+
+    alpha = 1
     random_seed = None
     #############################################
     
@@ -41,7 +42,7 @@ def main():
     
     memory = Memory()
     ppo = PPO(state_dim, action_dim, action_std, lr, betas, gamma, K_epochs, eps_clip)
-    print(lr,betas)
+    print(lr,betas, alpha)
     
     # logging variables
     running_reward = 0
@@ -55,8 +56,9 @@ def main():
             time_step +=1
             # Running policy_old:
             action_ref = ppo.select_action(state, memory)
-            action = solvecbf(state, action_ref, threshold=[-0.2617, 0.2617])
+            action, punish = solvecbf(state, action_ref, threshold=[-0.2617, 0.2617])
             state, reward, done, _ = env.step(action)
+            reward += alpha * punish
             # Saving reward and is_terminals:
             memory.rewards.append(reward)
             memory.is_terminals.append(done)
