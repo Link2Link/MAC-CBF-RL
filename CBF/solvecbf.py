@@ -38,11 +38,39 @@ k2 = -(pole[0] + pole[1])
 a0 = k1
 a1 = k2
 
-def solvecbf(state, u_ref, threshold= -0.2617):
+def findrange(A, B):
+    r = np.array([-np.inf, np.inf])
+    if B > 0:
+        r[0] = -A/B
+    else:
+        r[1] = -A/B
+    return r
+
+def applyrange(input, r):
+    if input > r[1]:
+        output = np.array([r[1]])
+    elif input < r[0]:
+        output = np.array([r[0]])
+    else:
+        output = input
+    return output
+
+def solvecbf(state, u_ref, threshold=[-0.2617, 0.2617]):
     x, x_dot, theta, theta_dot = state
-    A = m.Lfh(state) + a0*(theta - threshold) + a1*theta_dot
-    B = m.Lgh(state)
-    u_threshold = -A/B
-    u = u_ref if u_ref <= u_threshold else u_threshold
+    threshold = np.array(threshold, dtype=np.float32)
+    A1 = m.Lfh(state) + a0*(theta - threshold[0]) + a1*theta_dot
+    B1 = m.Lgh(state)
+    r1 = findrange(A1, B1)
+
+    A2 = -m.Lfh(state) + a0 * (threshold[1] - theta) - a1 * theta_dot
+    B2 = -m.Lgh(state)
+    r2 = findrange(A2, B2)
+
+    if r1[1] > r2[0] and r1[0] < r2[1]:     # if feasible
+        u = applyrange(u_ref, r1)
+        u = applyrange(u, r2)
+    else:
+        u = applyrange(u_ref, r1)           # if not feaisble, use r1
+
     return u
 

@@ -55,9 +55,8 @@ def main():
             time_step +=1
             # Running policy_old:
             action_ref = ppo.select_action(state, memory)
-            action = solvecbf(state, action_ref, threshold= -0.2617)
+            action = solvecbf(state, action_ref, threshold=[-0.2617, 0.2617])
             state, reward, done, _ = env.step(action)
-            
             # Saving reward and is_terminals:
             memory.rewards.append(reward)
             memory.is_terminals.append(done)
