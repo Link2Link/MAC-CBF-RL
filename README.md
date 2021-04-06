@@ -2,7 +2,8 @@
 
 安装CartPole：在CartPole目录下运行pip install -e .
 
-Deom
+### Demo
+
 ```
 import gym
 import CartPole
@@ -25,3 +26,10 @@ for i in range(500):
     if done:
         break
 ```
+
+### Train PPO
+
+```python
+python3 ppo_train.py
+```
+
