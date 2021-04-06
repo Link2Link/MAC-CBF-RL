@@ -1,6 +1,7 @@
 # MAC-CBF-RL
 
 安装CartPole：在CartPole目录下运行pip install -e .
+
 Deom
 ```
 import gym
