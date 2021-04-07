@@ -52,7 +52,7 @@ def main():
     total_step = 0
     
     logger = Logger(get_logger())
-    logger.setup_tb('./resource/')
+    logger.setup_tb('./resource/' + time.strftime("%a_%b_%d_%H%M%S_%Y", time.localtime()) + '/')
 
     # training loop
     for i_episode in range(1, max_episodes+1):
