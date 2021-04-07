@@ -1,6 +1,7 @@
 import gym
 import numpy as np
 import torch
+import time
 
 import CartPole
 from algos.algos.ppo import PPO
@@ -10,7 +11,7 @@ from CBF.solvecbf import solvecbf
 def main():
     ############## Hyperparameters ##############
     env_name = "CartPole-C-v0"
-    render = True
+    render = False
     solved_reward = 300         # stop training if avg_reward > solved_reward
     log_interval = 20           # print avg reward in the interval
     max_episodes = 10000        # max training episodes
@@ -53,13 +54,21 @@ def main():
         state = env.reset()
         for t in range(max_timesteps):
             time_step +=1
+
             # Running policy_old:
             action_ref = ppo.select_action(state, memory)
-            action = solvecbf(state, action_ref, threshold=[-0.2617, 0.2617])
-            state, reward, done, _ = env.step(action)
+            #action = solvecbf(state, action_ref, threshold=[-0.2617, 0.2617])
+            state, reward, done, _ = env.step(action_ref)
             # Saving reward and is_terminals:
             memory.rewards.append(reward)
             memory.is_terminals.append(done)
+
+            # if i_episode > 500:
+            #     print("================================")
+            #     print(action_ref)
+            #     print(action-action_ref)
+            #     env.render()
+            #     time.sleep(0.2)
             
             # update if its time
             if time_step % update_timestep == 0:

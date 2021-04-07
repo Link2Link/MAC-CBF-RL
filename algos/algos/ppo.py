@@ -3,8 +3,10 @@ import torch.nn as nn
 from torch.distributions import MultivariateNormal
 
 import numpy as np
+import time
 
-from algos.model.model import ActorCritic
+from algos.model.model import ActorCritic, GaussianActorCritic
+from algos.utils.logger import Logger, get_logger
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -16,13 +18,17 @@ class PPO:
         self.eps_clip = eps_clip
         self.K_epochs = K_epochs
         
-        self.policy = ActorCritic(state_dim, action_dim, action_std).to(device)
+        self.policy = GaussianActorCritic(state_dim, action_dim, action_std).to(device)
         self.optimizer = torch.optim.Adam(self.policy.parameters(), lr=lr, betas=betas)
         
-        self.policy_old = ActorCritic(state_dim, action_dim, action_std).to(device)
+        self.policy_old = GaussianActorCritic(state_dim, action_dim, action_std).to(device)
         self.policy_old.load_state_dict(self.policy.state_dict())
         
         self.MseLoss = nn.MSELoss()
+
+        self.train_iter = 0
+        self.logger = Logger(get_logger())
+        self.logger.setup_tb('./resource/' + time.strftime("%a %b %d %H:%M:%S %Y", time.localtime()) + '/')
     
     def select_action(self, state, memory):
         state = torch.FloatTensor(state.reshape(1, -1)).to(device)
@@ -65,6 +71,11 @@ class PPO:
             self.optimizer.zero_grad()
             loss.mean().backward()
             self.optimizer.step()
+            
+        self.logger.log_stat("ppo/actor loss", -torch.min(surr1, surr2).mean().detach().cpu().numpy(), self.train_iter)
+        self.logger.log_stat("ppo/critic loss", self.MseLoss(state_values, rewards).mean().detach().cpu().numpy(), self.train_iter)
+        self.logger.log_stat("ppo/entropy", dist_entropy.mean().detach().cpu().numpy(), self.train_iter)
+        self.train_iter += 1
             
         # Copy new weights into old policy:
         self.policy_old.load_state_dict(self.policy.state_dict())
