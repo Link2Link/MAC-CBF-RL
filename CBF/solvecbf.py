@@ -49,11 +49,16 @@ def findrange(A, B):
 def applyrange(input, r):
     if input > r[1]:
         output = np.array([r[1]])
+        punishment = r[1] - input
+        punishment = 0 * np.ones(1, dtype=np.float32)
     elif input < r[0]:
         output = np.array([r[0]])
+        punishment = input - r[0]
+        punishment = 0 * np.ones(1, dtype=np.float32)
     else:
         output = input
-    return output
+        punishment = np.ones(1, dtype=np.float32)
+    return output, punishment[0]
 
 def solvecbf(state, u_ref, threshold=[-0.2617, 0.2617]):
     x, x_dot, theta, theta_dot = state
@@ -67,10 +72,10 @@ def solvecbf(state, u_ref, threshold=[-0.2617, 0.2617]):
     r2 = findrange(A2, B2)
 
     if r1[1] > r2[0] and r1[0] < r2[1]:     # if feasible
-        u = applyrange(u_ref, r1)
-        u = applyrange(u, r2)
+        u, punish1 = applyrange(u_ref, r1)
+        u, punish2 = applyrange(u, r2)
+        punish = punish1 + punish2
     else:
-        u = applyrange(u_ref, r1)           # if not feaisble, use r1
+        u, punish = applyrange(u_ref, r1)           # if not feaisble, use r1
 
-    return u
-
+    return u, punish
