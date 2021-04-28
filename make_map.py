@@ -11,11 +11,18 @@ from smarts.core.utils.episodes import episodes
 from process import *
 from CBF.solvecbf2 import *
 from map.map import GridMap
+import cv2
+
 AGENT_ID = "Agent-007"
 num_episodes = 10
-linemap = GridMap.load(dir='map', name='mid')
-sidemap1 = GridMap.load(dir='map', name='sidemap1')
-sidemap2 = GridMap.load(dir='map', name='sidemap2')
+midmap = GridMap(name='mid')
+sidemap1 = GridMap(name='sidemap1')
+sidemap2 = GridMap(name='sidemap2')
+# midmap = GridMap.load('map', name='mid')
+# sidemap1 = GridMap.load('map', name='sidemap1')
+# sidemap2 = GridMap.load('map', name='sidemap2')
+
+
 
 class PIDController:
     def __init__(self, P=1, I=0, D=0):
@@ -33,37 +40,39 @@ class PIDController:
         self.err_last = err
         return output
 
-
-
 class CBFAgent(Agent):
+
     def __init__(self):
-        self.speed_control = PIDController(P=2, I=0.1, D=0)
-        self.angle_control = PIDController(P=0.2, I=0, D=0)
+        self.speed_control = PIDController(P=0.2, I=0.1, D=0)
+        self.angle_control = PIDController(P=0.01, I=0, D=0)
 
     def act(self, observations: Observation):
+        global midmap
         obs = observations[AGENT_ID]
         cbf_obs = obs_Frenet(obs)
+        mid_line = cbf_obs.road.waypoints[1]
+        midmap.add_to_map(mid_line)
 
-        position = cbf_obs.ego.p
-        cxe, cye, re = linemap.curvature(position[0], position[1], size=[10, 5])
-        cbf_obs.r = re
-        cbf_obs.cxe = cxe
-        cbf_obs.cye = cye
+        sideline1 = cbf_obs.road.waypoints[0]
+        sideline2 = cbf_obs.road.waypoints[2]
+
+        sidemap1.add_to_map((sideline1 - mid_line) * 0.5 + sideline1)
+        sidemap2.add_to_map((sideline2 - mid_line) * 0.5 + sideline2)
+
+        print('num', len(midmap), len(sidemap1), len(sidemap2))
 
 
-
-        # GridMap.show3(linemap.grid, sidemap1.grid, sidemap2.grid)
-        linemap.show3circle(linemap.grid, sidemap1.grid, sidemap2.grid, [cxe, cye], re, cbf_obs)
+        GridMap.show3(midmap.grid, sidemap1.grid, sidemap2.grid)
 
         speed = cbf_obs.ego.speed
-        target = 20
-        speed_control = target - speed
+        target = 10
+        speed_control = self.speed_control(target, speed)
 
         angle_control = 0
         waypoint = cbf_obs.road.waypoints[1, 5]
         position = cbf_obs.ego.p
         vec = waypoint - position
-        vec_n = np.sqrt(np.sum(vec ** 2))
+        vec_n = np.sqrt(np.sum(vec**2))
         vec = vec / vec_n
         direction = cbf_obs.ego.direction
         vec_o = np.zeros_like(vec)
@@ -72,16 +81,6 @@ class CBFAgent(Agent):
         err = np.sum(direction * vec_o)
         angle_control += err * 1
 
-        u_a, u_w = solvecbf(speed_control, angle_control, cbf_obs)
-        # print('u_cbf:', u_a, u_w)
-        # print('now:', cbf_obs.ego.acc, cbf_obs.ego.w)
-
-        speed_control = self.speed_control(u_a, cbf_obs.ego.acc)
-        angle_control = self.angle_control(u_w, cbf_obs.ego.w)
-
-
-
-        # print('after :', angle_control)
         return speed_control, angle_control
         # return self.nonlinear_map(speed_control, angle_control, speed)
 
@@ -127,6 +126,10 @@ def main(scenarios, sim_name, headless, num_episodes, seed):
             observations, rewards, dones, infos = env.step({AGENT_ID: agent_action})
             episode.record_step(observations, rewards, dones, infos)
 
+            midmap.save('map')
+            sidemap1.save('map')
+            sidemap2.save('map')
+
     env.close()
 
 
@@ -137,6 +140,6 @@ if __name__ == "__main__":
         scenarios=scenarios,
         sim_name=None,
         headless=False,
-        num_episodes=10,
+        num_episodes=50,
         seed=42,
     )

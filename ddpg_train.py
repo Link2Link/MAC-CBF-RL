@@ -11,6 +11,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torch.distributions import Normal
 from tensorboardX import SummaryWriter
+from map.map import GridMap
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--mode', default='train', type=str) # mode = 'train' or 'test'
@@ -61,6 +62,8 @@ if max_action > 100:
 min_Val = torch.tensor(1e-7).float().to(device) # min value
 
 directory = './exp/' + script_name + args.env_name +'./'
+
+midmap = GridMap.load('map', 'mid')
 
 class Replay_buffer():
     '''
