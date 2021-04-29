@@ -41,6 +41,7 @@ class CBFAgent(Agent):
         self.angle_control = PIDController(P=0.2, I=0, D=0)
 
     def act(self, observations: Observation):
+        # print(observations.keys())
         obs = observations[AGENT_ID]
         cbf_obs = obs_Frenet(obs)
 
@@ -56,7 +57,7 @@ class CBFAgent(Agent):
         linemap.show3circle(linemap.grid, sidemap1.grid, sidemap2.grid, [cxe, cye], re, cbf_obs)
 
         speed = cbf_obs.ego.speed
-        target = 20
+        target = 10
         speed_control = target - speed
 
         angle_control = 0
@@ -73,6 +74,9 @@ class CBFAgent(Agent):
         angle_control += err * 1
 
         u_a, u_w = solvecbf(speed_control, angle_control, cbf_obs)
+        u_a = speed_control if u_a is None else u_a
+        u_w = angle_control if u_w is None else u_w
+
         # print('u_cbf:', u_a, u_w)
         # print('now:', cbf_obs.ego.acc, cbf_obs.ego.w)
 
@@ -119,8 +123,8 @@ def main(scenarios, sim_name, headless, num_episodes, seed):
         agent = agent_spec.build_agent()
         observations = env.reset()
         episode.record_scenario(env.scenario_log)
-        observations, rewards, dones, infos = env.step({AGENT_ID: (0,0,0)})
         observations, rewards, dones, infos = env.step({AGENT_ID: (0, 0, 0)})
+
         dones = {"__all__": False}
         while not dones["__all__"]:
             agent_action = agent.act(observations)
