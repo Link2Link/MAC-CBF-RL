@@ -2,7 +2,8 @@ import logging
 import gym
 
 import sys
-sys.path.append('/home/llx/code/SMARTS')
+
+sys.path.append("/home/llx/code/SMARTS")
 
 from smarts.core.agent import Agent, AgentSpec
 from smarts.core.agent_interface import AgentInterface, AgentType
@@ -11,11 +12,13 @@ from smarts.core.utils.episodes import episodes
 from process import *
 from CBF.solvecbf2 import *
 from map.map import GridMap
+
 AGENT_ID = "Agent-007"
 num_episodes = 10
-linemap = GridMap.load(dir='map', name='mid')
-sidemap1 = GridMap.load(dir='map', name='sidemap1')
-sidemap2 = GridMap.load(dir='map', name='sidemap2')
+linemap = GridMap.load(dir="map", name="mid")
+sidemap1 = GridMap.load(dir="map", name="sidemap1")
+sidemap2 = GridMap.load(dir="map", name="sidemap2")
+
 
 class PIDController:
     def __init__(self, P=1, I=0, D=0):
@@ -25,6 +28,7 @@ class PIDController:
         self.err_int = 0
         self.err_last = 0
         self.dt = 0.1
+
     def __call__(self, target, current):
         err = target - current
         output = self.P * err + self.D * (err - self.err_last) + self.I * self.err_int
@@ -34,9 +38,9 @@ class PIDController:
         return output
 
 
-
 class CBFAgent(Agent):
     def __init__(self):
+        self.speed_control_ref = PIDController(P=2, I=0.1, D=0)
         self.speed_control = PIDController(P=2, I=0.1, D=0)
         self.angle_control = PIDController(P=0.2, I=0, D=0)
 
@@ -51,14 +55,14 @@ class CBFAgent(Agent):
         cbf_obs.cxe = cxe
         cbf_obs.cye = cye
 
-
-
         # GridMap.show3(linemap.grid, sidemap1.grid, sidemap2.grid)
-        linemap.show3circle(linemap.grid, sidemap1.grid, sidemap2.grid, [cxe, cye], re, cbf_obs)
+        linemap.show3circle(
+            linemap.grid, sidemap1.grid, sidemap2.grid, [cxe, cye], re, cbf_obs
+        )
 
         speed = cbf_obs.ego.speed
-        target = 10
-        speed_control = target - speed
+        target = 15
+        speed_control = self.speed_control_ref(target, speed)
 
         angle_control = 0
         waypoint = cbf_obs.road.waypoints[1, 5]
@@ -83,8 +87,6 @@ class CBFAgent(Agent):
         speed_control = self.speed_control(u_a, cbf_obs.ego.acc)
         angle_control = self.angle_control(u_w, cbf_obs.ego.w)
 
-
-
         # print('after :', angle_control)
         return speed_control, angle_control
         # return self.nonlinear_map(speed_control, angle_control, speed)
@@ -93,10 +95,12 @@ class CBFAgent(Agent):
         angle_control = np.arctan2(3.5 * angle_control, speed)
         return (speed_control, angle_control)
 
+
 import time
 
+
 def action_adapter(action):
-    if action[0] >=0:
+    if action[0] >= 0:
         return (action[0], 0, action[1])
     else:
         return (0, -action[0], action[1])
@@ -135,7 +139,7 @@ def main(scenarios, sim_name, headless, num_episodes, seed):
 
 
 if __name__ == "__main__":
-    scenarios = ['./../SMARTS/scenarios/myself']
+    scenarios = ["./../SMARTS/scenarios/myself"]
 
     main(
         scenarios=scenarios,
