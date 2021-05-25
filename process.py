@@ -111,16 +111,24 @@ class obstocal:
     def __call__(self, obs:Observation):
         neighbor = obs.neighborhood_vehicle_states
         num = len(neighbor)
-        pos = np.array([neighbor[i].position[:2] for i in range(num)])
-        heading = np.array([neighbor[i].heading + np.pi/2 for i in range(num)])
-        speed = np.array([neighbor[i].speed for i in range(num)])
-        v = np.zeros_like(pos)
-        v[:, 0] = speed * np.cos(heading)
-        v[:, 1] = speed * np.sin(heading)
+        if num > 0:
+            pos = np.array([neighbor[i].position[:2] for i in range(num)])
+            heading = np.array([neighbor[i].heading + np.pi/2 for i in range(num)])
+            speed = np.array([neighbor[i].speed for i in range(num)])
+            v = np.zeros_like(pos)
 
-        self.p = pos
-        self.angle = heading
-        self.v = v
+            v[:, 0] = speed * np.cos(heading)
+            v[:, 1] = speed * np.sin(heading)
+
+            self.p = pos
+            self.angle = heading
+            self.v = v
+        else:
+            self.p = np.array([])
+            self.angle = np.array([])
+            self.v = np.array([])
+
+
 
 class road:
     def __init__(self):

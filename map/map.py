@@ -66,13 +66,10 @@ class GridMap:
         return img, points
 
 
-    def curvature(self, x, y, size=[10, 10]):
-
+    def curvature(self, x, y, size=[15, 15]):
 
         img, points = self.neighbor(x, y, size, show=False)
         cxe, cye, re, error = circle_fitting(points[:, 0], points[:, 1])
-
-
 
         return cxe, cye, re
 

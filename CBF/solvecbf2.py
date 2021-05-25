@@ -114,7 +114,7 @@ def solvecbf(speed_control, angle_control, cbf_obs: CBFObservation):
         + 1000 * (slack1 + slack2)
     )
     prob = Problem(obj, constraints)
-    prob.solve(solver="CVXOPT")  # Returns the optimal value.
+    prob.solve(solver="SCS")  # Returns the optimal value.
     status = prob.status
 
     # print('h', h_r - 0.5*(r1**2), 0.5*(r2**2)-h_r)
@@ -131,7 +131,7 @@ def solvecbf(speed_control, angle_control, cbf_obs: CBFObservation):
             None,
             None,
         )
-    return u_a.value, -u_w.value
+    return u_a.value, u_w.value
 
 
 if __name__ == "__main__":
